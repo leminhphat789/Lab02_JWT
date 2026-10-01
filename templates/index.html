@@ -1,0 +1,15 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>TH2 Flask JWT</title>
+<style>body{font:17px Arial;margin:40px auto;max-width:960px;color:#1b2e43;background:#f5f7fa}h1{font-size:30px}section{background:white;border:1px solid #d6dfe8;padding:24px;margin:20px 0;border-radius:10px}label{display:block;margin:12px 0}input{font:17px Consolas;padding:10px;width:300px}button,a{font:16px Arial;padding:12px;margin:6px 6px 6px 0}button{background:#165ca6;color:white;border:0;border-radius:5px;cursor:pointer}pre{background:#edf2f7;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;font:15px Consolas;line-height:1.5}.note{color:#52657b;font-size:15px}</style></head>
+<body><h1>Bài thực hành 2 — Router, Middleware và JWT</h1><p>Lê Minh Phát · K46D · Kiến trúc hướng dịch vụ · Đại học QNU</p>
+<section><h2>Đăng nhập qua client</h2><p>Tài khoản thực hành: <b>phat</b> · Mật khẩu: <b>Phat@123</b></p>
+<form id="login"><label>userName<br><input id="username" value="phat" required></label><label>password<br><input id="password" value="Phat@123" type="password" required></label><button>Đăng nhập và nhận JWT</button></form>
+<p class="note">Client chuyển mật khẩu sang Base64 trước khi gửi. Base64 là biểu diễn dữ liệu, không phải mã hóa bảo mật; chỉ dùng HTTP trên localhost trong bài thực hành.</p></section>
+<section><h2>Kiểm tra dịch vụ</h2><button id="auth">GET /auth</button><button id="hello">GET /api/hello</button><button id="without">Hello World không có token</button><a href="/docs">Mở Swagger UI</a><pre id="result">Chưa gửi yêu cầu.</pre></section>
+<script>
+let token='';
+async function call(path,options={}){const r=await fetch(path,options);const body=await r.json();document.querySelector('#result').textContent=JSON.stringify({url:location.origin+path,httpStatus:r.status,response:body},null,2);return body;}
+document.querySelector('#login').onsubmit=async e=>{e.preventDefault();const bytes=new TextEncoder().encode(document.querySelector('#password').value);const password=btoa(String.fromCharCode(...bytes));const data=await call('/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userName:document.querySelector('#username').value,password})});token=data.access_token||'';};
+document.querySelector('#auth').onclick=()=>call('/auth',{headers:{Authorization:'Bearer '+token}});
+document.querySelector('#hello').onclick=()=>call('/api/hello',{headers:{Authorization:'Bearer '+token}});
+document.querySelector('#without').onclick=()=>call('/api/hello');
+</script></body></html>

@@ -1,0 +1,173 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "TH2 - Flask Router Middleware JWT",
+    "version": "1.0.0",
+    "description": "Lê Minh Phát - K46D. Đăng nhập: phat / Phat@123. Body password dùng Base64: UGhhdEAxMjM=. POST / → sao chép access_token → Authorize (chỉ dán token) → GET /auth → GET /api/hello. JWT hết hạn sau 15 phút; đăng nhập lại sẽ thay token cũ."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Máy chủ Flask TH2 trên localhost:5001"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Dán access_token nhận từ POST /; không thêm chữ Bearer."
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "1 Login"
+        ],
+        "summary": "Đăng nhập và cấp JWT",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userName",
+                  "password"
+                ],
+                "properties": {
+                  "userName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Mật khẩu UTF-8 đã chuyển Base64 tại client"
+                  }
+                }
+              },
+              "example": {
+                "userName": "phat",
+                "password": "UGhhdEAxMjM="
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công; access_token là JWT HS256",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu đầu vào không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sai tài khoản hoặc mật khẩu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth": {
+      "get": {
+        "tags": [
+          "2 Authentication"
+        ],
+        "summary": "Xác thực JWT và xem cấu trúc token",
+        "operationId": "auth",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JWT hợp lệ: header, payload và kết quả xác minh chữ ký",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu, hết hạn, sai chữ ký hoặc token bị thay thế",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hello": {
+      "get": {
+        "tags": [
+          "3 Protected API"
+        ],
+        "summary": "Hello World được bảo vệ bởi middleware JWT",
+        "operationId": "hello",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hello World khi JWT hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Middleware từ chối yêu cầu không có JWT hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

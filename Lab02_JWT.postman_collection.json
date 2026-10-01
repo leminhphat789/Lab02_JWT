@@ -1,0 +1,350 @@
+{
+  "info": {
+    "name": "Lab02_JWT - Flask Router Middleware JWT",
+    "description": "TH2 - Flask Blueprint Router, before_request Middleware, PyJWT HS256. Chay thu tu 01-06. Request 02 ma hoa Base64 tai Postman va tu luu JWT. Flask: localhost:5001. Tai khoan demo: phat / Phat@123.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Hello World khong token - 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"JSON response\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+              "pm.test(\"Middleware blocks missing token\", () => pm.expect(pm.response.json().error).to.eql(\"MISSING_TOKEN\"));",
+              "})();"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/hello",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "hello"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Dang nhap Base64 va cap JWT - 200",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.collectionVariables.unset(\"token\");",
+              "const password=pm.collectionVariables.get(\"password\");",
+              "pm.variables.set(\"passwordBase64\", require(\"btoa\")(password));",
+              "console.log(\"Client Base64 password\",pm.variables.get(\"passwordBase64\"));",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+              "const data=pm.response.json();",
+              "pm.test(\"JWT issued\", () => pm.expect(data.access_token).to.be.a(\"string\"));",
+              "if (pm.response.code === 200) {",
+              " pm.collectionVariables.set(\"token\",data.access_token);",
+              " const parts=data.access_token.split(\".\");",
+              " pm.test(\"JWT has 3 parts\",()=>pm.expect(parts.length).to.eql(3));",
+              " const decode=s=>JSON.parse(require(\"atob\")(s.replace(/-/g,\"+\").replace(/_/g,\"/\").padEnd(Math.ceil(s.length/4)*4,\"=\")));",
+              " const header=decode(parts[0]), payload=decode(parts[1]);",
+              " pm.collectionVariables.set(\"jwt_header\",JSON.stringify(header));",
+              " pm.collectionVariables.set(\"jwt_payload\",JSON.stringify(payload));",
+              " pm.test(\"HS256 algorithm\",()=>pm.expect(header.alg).to.eql(\"HS256\"));",
+              " pm.test(\"Expiration is 900 seconds\",()=>pm.expect(payload.exp-payload.iat).to.eql(900));",
+              " console.log(\"JWT header\",header); console.log(\"JWT payload\",payload);",
+              "}",
+              "})();"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userName\": \"{{userName}}\",\n  \"password\": \"{{passwordBase64}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Auth va cau truc JWT - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+              "const data=pm.response.json();",
+              "pm.test(\"Authenticated\",()=>pm.expect(data.authenticated).to.eql(true));",
+              "pm.test(\"Signature verified by server\",()=>pm.expect(data.jwt.signatureVerified).to.eql(true));",
+              "pm.test(\"Header payload signature\",()=>pm.expect(data.jwt.parts).to.eql(3));",
+              "})();"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Hello World co JWT - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+              "pm.test(\"Hello World\",()=>pm.expect(pm.response.json().message).to.eql(\"Hello World\"));",
+              "pm.test(\"Middleware verified JWT\",()=>pm.expect(pm.response.json().middleware).to.eql(\"JWT verified\"));",
+              "})();"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/hello",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "hello"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Token sai chu ky - 401",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "const token=pm.collectionVariables.get(\"token\");",
+              "if(!token) throw new Error(\"Run request 02 first\");",
+              "const parts=token.split(\".\");",
+              "parts[2]=(parts[2][0]===\"A\"?\"B\":\"A\")+parts[2].slice(1);",
+              "pm.variables.set(\"invalidToken\",parts.join(\".\"));",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"JSON response\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+              "pm.test(\"Invalid signature rejected\",()=>pm.expect(pm.response.json().error).to.eql(\"INVALID_TOKEN\"));",
+              "})();"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{invalidToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Sai mat khau - 401",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.variables.set(\"wrongPasswordBase64\",require(\"btoa\")(\"wrong-password\"));",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(() => {",
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"JSON response\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+              "pm.test(\"Wrong password rejected\",()=>pm.expect(pm.response.json().error).to.eql(\"INVALID_CREDENTIALS\"));",
+              "})();"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userName\": \"{{userName}}\",\n  \"password\": \"{{wrongPasswordBase64}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5001"
+    },
+    {
+      "key": "userName",
+      "value": "phat"
+    },
+    {
+      "key": "password",
+      "value": "Phat@123"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "jwt_header",
+      "value": ""
+    },
+    {
+      "key": "jwt_payload",
+      "value": ""
+    }
+  ]
+}

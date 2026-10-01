@@ -1,0 +1,79 @@
+(node:27920) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+newman
+
+Lab02_JWT - Flask Router Middleware JWT
+
+→ 01 - Hello World khong token - 401
+  GET http://127.0.0.1:5001/api/hello [401 UNAUTHORIZED, 298B, 23ms]
+  √  HTTP 401
+  √  JSON response
+  √  Middleware blocks missing token
+
+→ 02 - Dang nhap Base64 va cap JWT - 200
+  ┌
+  │ 'Client Base64 password', 'UGhhdEAxMjM='
+  └
+  POST http://127.0.0.1:5001/ [200 OK, 463B, 154ms]
+  √  HTTP 200
+  √  JSON response
+  √  JWT issued
+  √  JWT has 3 parts
+  √  HS256 algorithm
+  √  Expiration is 900 seconds
+  ┌
+  │ 'JWT header', { alg: 'HS256', typ: 'JWT' }
+  │ 'JWT payload', {
+  │   sub: '1',
+  │   iat: 1790837918,
+  │   exp: 1790838818,
+  │   jti: 'f05faaa2b3a5c006'
+  │ }
+  └
+
+→ 03 - Auth va cau truc JWT - 200
+  GET http://127.0.0.1:5001/auth [200 OK, 413B, 5ms]
+  √  HTTP 200
+  √  JSON response
+  √  Authenticated
+  √  Signature verified by server
+  √  Header payload signature
+
+→ 04 - Hello World co JWT - 200
+  GET http://127.0.0.1:5001/api/hello [200 OK, 282B, 4ms]
+  √  HTTP 200
+  √  JSON response
+  √  Hello World
+  √  Middleware verified JWT
+
+→ 05 - Token sai chu ky - 401
+  GET http://127.0.0.1:5001/auth [401 UNAUTHORIZED, 307B, 3ms]
+  √  HTTP 401
+  √  JSON response
+  √  Invalid signature rejected
+
+→ 06 - Sai mat khau - 401
+  POST http://127.0.0.1:5001/ [401 UNAUTHORIZED, 307B, 102ms]
+  √  HTTP 401
+  √  JSON response
+  √  Wrong password rejected
+
+┌─────────────────────────┬───────────────────┬──────────────────┐
+│                         │          executed │           failed │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│              iterations │                 1 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│                requests │                 6 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│            test-scripts │                 6 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│      prerequest-scripts │                 3 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│              assertions │                24 │                0 │
+├─────────────────────────┴───────────────────┴──────────────────┤
+│ total run duration: 772ms                                      │
+├────────────────────────────────────────────────────────────────┤
+│ total data received: 820B (approx)                             │
+├────────────────────────────────────────────────────────────────┤
+│ average response time: 48ms [min: 3ms, max: 154ms, s.d.: 58ms] │
+└────────────────────────────────────────────────────────────────┘
